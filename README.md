@@ -1,4 +1,5 @@
 # Smart-Refrigerator
+(Please refer to working videos and prototype images for more details. This is a prototype and I am currently working on it to make a full fledge product)
 
 Welcome to the introduction of our groundbreaking project, the Smart Refrigerator. This project combines cutting-edge technology with everyday convenience, offering an intelligent solution for managing your refrigerator's contents and optimizing your food inventory.
 
