@@ -1,0 +1,154 @@
+
+#include <HX711_ADC.h>
+#if defined(ESP8266)|| defined(ESP32) || defined(AVR)
+#include <EEPROM.h>
+#endif
+
+
+#include<LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x25,16,2);
+
+
+
+
+const int HX711_dout = 4; //mcu > HX711 dout pin
+const int HX711_sck = 5; //mcu > HX711 sck pin
+
+HX711_ADC LoadCell(HX711_dout, HX711_sck);
+
+const int calVal_eepromAdress = 0;
+unsigned long t = 0;
+
+
+float new_weight=0;
+float temp_weight=0;
+
+int gate_pin = 9;
+int cam_pin=8;
+bool gate = 0;
+int status_pin=13;
+void load_cell_setup(){
+  LoadCell.begin();
+  //LoadCell.setReverseOutput(); //uncomment to turn a negative output value to positive
+  float calibrationValue; // calibration value (see example file "Calibration.ino")
+  calibrationValue = 696.0; // uncomment this if you want to set the calibration value in the sketch
+#if defined(ESP8266)|| defined(ESP32)
+  //EEPROM.begin(512); // uncomment this if you use ESP8266/ESP32 and want to fetch the calibration value from eeprom
+#endif
+  EEPROM.get(calVal_eepromAdress, calibrationValue); // uncomment this if you want to fetch the calibration value from eeprom
+  unsigned long stabilizingtime = 2000; // preciscion right after power-up can be improved by adding a few seconds of stabilizing time
+  boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
+  LoadCell.start(stabilizingtime, _tare);
+  if (LoadCell.getTareTimeoutFlag()) {
+//    Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
+    while (1);}
+  else {
+    LoadCell.setCalFactor(calibrationValue); // set calibration value (float)
+//    Serial.println("Startup is complete");
+}
+  
+
+}
+void load_cell_function(){
+        static boolean newDataReady = 0;
+  const int serialPrintInterval = 8000; //increase value to slow down serial print activity
+
+  // check for new data/start next conversion:
+  if (LoadCell.update()) newDataReady = true;
+     
+  // get smoothed value from the dataset:
+  if (newDataReady) {
+    if (millis() > t + serialPrintInterval) {
+      float i = LoadCell.getData();
+       temp_weight=i;
+      int index=1;
+      while(index<300){
+         i = LoadCell.getData();
+         index=index+1;
+        temp_weight=i;
+      }
+      newDataReady = 0;
+      t = millis();
+    }
+  }
+
+//  if (Serial.available() > 0) {
+//    char inByte = Serial.read();
+//    if (inByte == 't') LoadCell.tareNoDelay();
+//  }
+//  if (LoadCell.getTareStatus() == true) {
+////    Serial.println("Tare complete");
+//  }
+    
+}
+
+
+void camera_function(){
+     gate=0;
+    digitalWrite(cam_pin,HIGH);
+   if(digitalRead(gate_pin)==1){
+     load_cell_function();
+     
+     if(new_weight>temp_weight+20)
+     {
+      new_weight=temp_weight; 
+//      Serial.print("new_weight : ");
+      Serial.println(new_weight);
+     }if(new_weight<temp_weight-20){
+      new_weight=temp_weight;
+//       Serial.print("new_weight : ");
+      Serial.println(new_weight);
+     }
+   }
+   if(digitalRead(gate_pin)==0){
+//    Serial.println("gate is opened");
+    gate=1;
+    
+    delay(1000);
+   }
+   if(gate==1){
+    while(gate!=0){
+      delay(200);
+      if(analogRead(gate_pin)>1000){
+//        Serial.println("Gate closed again");
+        digitalWrite(cam_pin,LOW);
+        gate=0;}}
+       }
+  }
+
+
+  
+void setup() {
+  Serial.begin(115200); delay(10);
+//  Serial.println();
+//  Serial.println("Starting...");
+
+  load_cell_setup();
+  pinMode(gate_pin,INPUT);
+  pinMode(status_pin,OUTPUT);
+  pinMode(cam_pin,OUTPUT);
+  digitalWrite(cam_pin,HIGH);
+    lcd.init();
+  lcd.backlight();
+    
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("setup complete");
+}
+
+
+void loop() {
+  digitalWrite(cam_pin,HIGH);
+   digitalWrite(status_pin,HIGH);
+ camera_function();
+ while(Serial.available()){
+  lcd.clear();
+     String str =Serial. readString();
+     lcd.setCursor(0,0);
+      
+     lcd.print(str);
+      str =Serial. readString();
+     lcd.setCursor(0,1);
+     lcd.print(str);
+   }
+}

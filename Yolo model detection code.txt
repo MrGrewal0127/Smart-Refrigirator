@@ -1,0 +1,44 @@
+from google.colab import drive
+drive.mount('/content/drive')  
+
+%cd ../content/drive/MyDrive/yolov5
+
+import firebase
+import pyrebase
+config = {
+  "apiKey": "AIzaSyCMHrmadzRst4u8sAFs9JeMJbJFw9NfNyQ",
+  "authDomain": "project0-dcc76.firebaseapp.com",
+  "databaseURL": "https://project0.firebaseio.com",
+  "projectId": "project0-dcc76",
+  "storageBucket": "project0-dcc76.appspot.com",
+  "messagingSenderId": "1086465111990",
+  "appId": "1:1086465111990:web:8a4d3ecee27b4f1a8c3317",
+  "measurementId": "G-BQ2VQ43B5K"
+}
+
+firebase = pyrebase.initialize_app(config)
+db = firebase.database()
+data=db.child("New_weight").get()
+temp_weight= data.val()["Weight"]
+import os
+import cv2 as cv
+import shutil
+import time
+while(1):
+    data=db.child("New_weight").get()
+    weight=data.val()["Weight"]
+    if(weight!=temp_weight):
+        time.sleep(7)
+        path = "../ESP32-CAM"
+        for file in os.listdir(path):
+            img = cv.imread(os.path.join(path,file))
+            img_path = os.path.join(path,file)
+            shutil.copyfile(img_path, '../ESP32-CAM-DETECT/1.jpg')
+            !python detect.py --weights yolov5s.pt --img 640 --conf 0.25 --source ../ESP32-CAM-DETECT/1.jpg 
+            # os.remove(img_path)
+            shutil.copyfile("runs/detect/exp/1.jpg", '../ESP32-CAM-DETECT/1.jpg')
+            shutil.copyfile("runs/detect/exp/readme.txt", '../ESP32-CAM-DETECT/1.txt')
+            os.remove("runs/detect/exp/1.jpg")
+            os.remove("runs/detect/exp/readme.txt")
+            os.rmdir("runs/detect/exp")
+        temp_weight=weight
