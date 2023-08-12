@@ -6,14 +6,14 @@ drive.mount('/content/drive')
 import firebase
 import pyrebase
 config = {
-  "apiKey": "AIzaSyCMHrmadzRst4u8sAFs9JeMJbJFw9NfNyQ",
-  "authDomain": "project0-dcc76.firebaseapp.com",
-  "databaseURL": "https://project0.firebaseio.com",
-  "projectId": "project0-dcc76",
-  "storageBucket": "project0-dcc76.appspot.com",
-  "messagingSenderId": "1086465111990",
-  "appId": "1:1086465111990:web:8a4d3ecee27b4f1a8c3317",
-  "measurementId": "G-BQ2VQ43B5K"
+  "apiKey": "",
+  "authDomain": "",
+  "databaseURL": "",
+  "projectId": "",
+  "storageBucket": "",
+  "messagingSenderId": "",
+  "appId": "",
+  "measurementId": ""
 }
 
 firebase = pyrebase.initialize_app(config)
